@@ -2,7 +2,6 @@
 #include <string>
 #include <vector>
 #include <stack>
-#include <regex>
 #include <cmath>
 #include <stdexcept>
 #include <map>
@@ -29,16 +28,6 @@ vector<string> tokenize(const string& expression) {
 			tokens.push_back(token);
 			token.clear();
 		}
-
-		else if (isalpha(ch)) {
-			token += ch;
-			while (i + 1 < expression.size() && isalpha(expression[i + 1])) {
-				token += expression[++i];
-			}
-			tokens.push_back(token);
-			token.clear();
-		}
-
 		else if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^' || ch == '(' || ch == ')') {
 			tokens.push_back(string(1, ch));
 		}
@@ -57,7 +46,6 @@ int priority(char oper) {
 }
 
 
-
 double operation(double a, double b, char oper) {
 	if (oper == '+')
 		return a + b;
@@ -73,6 +61,63 @@ double operation(double a, double b, char oper) {
 	cout << "Invalid operator";
 }
 
+double get_value(const string& token) {
+	if (!token.empty() && isdigit(token[0])) {
+		return stod(token);
+	} else if (variables.find(token) != variables.end()) {
+		return variables[token];
+	} else {
+		cout << "Unknown variable: " + token << endl;
+		return nan(""); 
+	}
+}
+
+void process_operator(stack<double>& values, stack<char>& operators) {
+	if (values.size() < 2) throw runtime_error("Invalid expression");
+	double b = values.top(); values.pop();
+	double a = values.top(); values.pop();
+	char oper = operators.top(); operators.pop();
+	values.push(operation(a, b, oper));
+}
+
+
+void process_parentheses(stack<double>& values, stack<char>& operators) {
+	while (!operators.empty() && operators.top() != '(') {
+		process_operator(values, operators);
+	}
+	if (!operators.empty()) operators.pop(); // Remove the '(' from stack
+}
+
+void process_token(const string& token, stack<double>& values, stack<char>& operators) {
+	if (!token.empty() && isdigit(token[0])) {
+		values.push(get_value(token));
+	} else if (token == "(") {
+		operators.push(token[0]);
+	} else if (token == ")") {
+		process_parentheses(values, operators);
+	} else if (token.size() == 1 && strchr("+-*/^", token[0])) {
+		while (!operators.empty() && priority(operators.top()) >= priority(token[0])) {
+			process_operator(values, operators);
+		}
+		operators.push(token[0]);
+	}
+}
+
+double shunting_yard(const vector<string>& tokens) {
+	stack<double> values;
+	stack<char> operators;
+
+	for (const auto& token : tokens) {
+		process_token(token, values, operators);
+	}
+
+	while (!operators.empty()) {
+		process_operator(values, operators);
+	}
+
+	if (values.size() != 1) throw runtime_error("Invalid expression");
+	return values.top();
+}
 
 
 bool continue_program() {
@@ -101,18 +146,35 @@ bool continue_program() {
 int main() {
 	while (true) {
 		string expression;
-		cout << "Enter an expression (3 + 5: ";
+		cout << "Enter an expression: ";
 		getline(cin, expression);
-
 		vector<string> tokens = tokenize(expression);
-
 		cout << "Tokens: ";
 		for (const auto& token : tokens) {
 			cout << token << " ";
 		}
 		cout << endl;
+		try {
+			if (tokens.size() > 2 && tokens[1] == "=") {
+				string variable = tokens[0];
+				vector<string> expression_tokens(tokens.begin() + 2, tokens.end());
+				double result = shunting_yard(expression_tokens);
+				variables[variable] = result;
+				cout << variable << " = " << result << endl;
+			}
+			else {
+				double result = shunting_yard(tokens);
+				cout << "Result: " << result << endl;
+			}
+		}
+		catch (const exception& e) {
+			cout << "Error: " << e.what() << endl;
+		}
 
-
-		return 0;
+		if (!continue_program()) {
+			break;
+		}
 	}
+	return 0;
+
 }
