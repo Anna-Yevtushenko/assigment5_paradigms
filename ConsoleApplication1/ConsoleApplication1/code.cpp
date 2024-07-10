@@ -7,10 +7,10 @@
 #include <stdexcept>
 #include <map>
 #include <limits>
+#include <cctype> 
 
 using namespace std;
 map<string, double> variables;
-
 
 vector<string> tokenize(const string& expression) {
 	vector<string> tokens;
@@ -20,7 +20,7 @@ vector<string> tokenize(const string& expression) {
 		if (isspace(ch)) { // Skip spaces
 			continue;
 		}
-		
+
 		if (isdigit(ch) || ch == '.') {
 			token += ch;
 			while (i + 1 < expression.size() && (isdigit(expression[i + 1]) || expression[i + 1] == '.')) {
@@ -38,46 +38,42 @@ vector<string> tokenize(const string& expression) {
 			tokens.push_back(token);
 			token.clear();
 		}
-		
+
 		else if (ch == '+' || ch == '-' || ch == '*' || ch == '/' || ch == '^' || ch == '(' || ch == ')') {
 			tokens.push_back(string(1, ch));
 		}
 	}
-
 	return tokens;
 }
 
-double add(double a, double b) {
-	return a + b;
+int priority(char oper) {
+	if (oper == '+' || oper == '-')
+		return 1;
+	if (oper == '*' || oper == '/')
+		return 2;
+	if (oper == '^')
+		return 3;
+	return 0;
 }
 
-double subtract(double a, double b) {
-	return a - b;
+
+
+double operation(double a, double b, char oper) {
+	if (oper == '+')
+		return a + b;
+	if (oper == '-')
+		return a - b;
+	if (oper == '*')
+		return a * b;
+	if (oper == '/')
+		return a / b;
+	if (oper == '^')
+		return pow(a, b);
+	//throw invalid_argument("Invalid operator");
+	cout << "Invalid operator";
 }
 
-double multiply(double a, double b) {
-	return a * b;
-}
 
-double divide(double a, double b) {
-	return a / b;
-}
-
-double pow_function(double a, double b) {
-	return pow(a, b);
-}
-
-double abs_function(double a, double b) {
-	return fabs(a);
-}
-
-double max_function(double a, double b) {
-	return max(a, b);
-}
-
-double min_function(double a, double b) {
-	return min(a, b);
-}
 
 bool continue_program() {
 	char input[80];
@@ -105,7 +101,7 @@ bool continue_program() {
 int main() {
 	while (true) {
 		string expression;
-		cout << "Enter an expression (e.g., 3 + 5 or a = 3 + 5): ";
+		cout << "Enter an expression (3 + 5: ";
 		getline(cin, expression);
 
 		vector<string> tokens = tokenize(expression);
@@ -116,54 +112,6 @@ int main() {
 		}
 		cout << endl;
 
-
-		//	switch (operation[0]) {
-		//	case '+':
-		//		result = add(a, b);
-		//		break;
-		//	case '-':
-		//		result = subtract(a, b);
-		//		break;
-		//	case '*':
-		//		result = multiply(a, b);
-		//		break;
-		//	case '/':
-		//		result = divide(a, b);
-		//		break;
-		//	default:
-		//		valid_operation = false;
-		//	}
-		//	if (!valid_operation) {
-		//		if (operation == "pow") {
-		//			result = pow_function(a, b);
-		//			valid_operation = true;
-		//		}
-		//		else if (operation == "abs") {
-		//			result = abs_function(a, b);
-		//			valid_operation = true;
-		//		}
-		//		else if (operation == "max") {
-		//			result = max_function(a, b);
-		//			valid_operation = true;
-		//		}
-		//		else if (operation == "min") {
-		//			result = min_function(a, b);
-		//			valid_operation = true;
-		//		}
-		//		else {
-		//			cout << "Unknown operation!" << endl;
-		//			valid_operation = false;
-		//		}
-		//	}
-
-		//	if (valid_operation) {
-		//		cout << "Result: " << result << endl;
-		//	}
-
-		//	if (!continue_program()) {
-		//		break;
-		//	}
-		//}
 
 		return 0;
 	}
