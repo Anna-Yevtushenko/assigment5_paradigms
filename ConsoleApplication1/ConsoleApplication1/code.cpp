@@ -17,6 +17,8 @@ bool is_custom_function(const string& token) {
     return token == "min" || token == "max";
 }
 
+
+
 vector<string> tokenize(const string& expression) {
     vector<string> tokens;
     string token;
@@ -111,6 +113,14 @@ double min_function(const vector<double>& args) {
     return min_val;
 }
 
+double pow_function(const vector<double>& args) {
+    if (args.size() != 2) return nan(""); 
+    return pow(args[0], args[1]);
+}
+
+double abs_function(const vector<double>& args) {
+    if (args.size() != 1) return nan(""); 
+}
 
 void process_parentheses(stack<double>& values, stack<char>& operators) {
     while (!operators.empty() && operators.top() != '(') {
@@ -162,7 +172,7 @@ double shunting_yard(const vector<string>& tokens) {
     return values.top();
 }
 
-// Обчислення результату функції до токенізації
+
 double evaluate_function(const string& function, const string& args_str) {
     vector<string> args_tokens = tokenize(args_str);
     vector<double> args_values;
@@ -180,7 +190,7 @@ double evaluate_function(const string& function, const string& args_str) {
         }
     }
     if (!current_arg.empty()) {
-        args_values.push_back(stod(current_arg));
+        args_values.push_back(stod(current_arg)); // обробка останнього елемента
     }
 
     if (function == "max") {
@@ -189,42 +199,43 @@ double evaluate_function(const string& function, const string& args_str) {
     else if (function == "min") {
         return min_function(args_values);
     }
+    else if (function == "abs") {
+        return abs_function(args_values);
+    }
+    else if (function == "pow") {
+        return pow_function(args_values);
+    }
     else {
         throw invalid_argument("Unknown function: " + function);
     }
 }
 
+string process_function(const string& expression, const string& func_name) {
+    string new_expression = expression;
+    int func_pos = new_expression.find(func_name + "(");
+    while (func_pos != string::npos) {
+        int args_start_pos = func_pos + func_name.length() + 1; 
+        int args_end_pos = new_expression.find(')', args_start_pos);
+        if (args_end_pos == string::npos) {
+            throw invalid_argument("Invalid function format");
+        }
+        string args_str = new_expression.substr(args_start_pos, args_end_pos - args_start_pos);
+        double result = evaluate_function(func_name, args_str);
+        new_expression.replace(func_pos, args_end_pos - func_pos + 1, to_string(result));
+        func_pos = new_expression.find(func_name + "(", func_pos + 1);
+    }
+    return new_expression;
+}
 
 string preprocess_expression(const string& expression) {
     string new_expression = expression;
-    size_t pos = new_expression.find("max(");
-    while (pos != string::npos) {
-        size_t start_pos = pos + 4;
-        size_t end_pos = new_expression.find(')', start_pos);
-        if (end_pos == string::npos) {
-            throw invalid_argument("Invalid function format");
-        }
-        string args_str = new_expression.substr(start_pos, end_pos - start_pos);
-        double result = evaluate_function("max", args_str);
-        new_expression.replace(pos, end_pos - pos + 1, to_string(result));
-        pos = new_expression.find("max(", pos + 1);
-    }
-
-    pos = new_expression.find("min(");
-    while (pos != string::npos) {
-        size_t start_pos = pos + 4;
-        size_t end_pos = new_expression.find(')', start_pos);
-        if (end_pos == string::npos) {
-            throw invalid_argument("Invalid function format");
-        }
-        string args_str = new_expression.substr(start_pos, end_pos - start_pos);
-        double result = evaluate_function("min", args_str);
-        new_expression.replace(pos, end_pos - pos + 1, to_string(result));
-        pos = new_expression.find("min(", pos + 1);
-    }
-
+    new_expression = process_function(new_expression, "max");
+    new_expression = process_function(new_expression, "min");
+    new_expression = process_function(new_expression, "abs");
+    new_expression = process_function(new_expression, "pow");
     return new_expression;
 }
+
 
 bool continue_program() {
     char input[80];
