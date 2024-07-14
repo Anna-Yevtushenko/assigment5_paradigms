@@ -98,7 +98,7 @@ double max_function(const vector<double>& args) {
         return nan(""); 
     }
     double max_val = args[0];
-    for (double arg : args) {
+    for (double arg : args) { //range-based for loop
         if (arg > max_val) {
             max_val = arg;
         }
@@ -171,11 +171,9 @@ double shunting_yard(const vector<string>& tokens) {
     stack<double> values;
     stack<char> operators;
     stack<string> functions;
-
     for (const auto& token : tokens) {
         process_token(token, values, operators, functions);
     }
-
     while (!operators.empty()) {
         process_operator(values, operators);
     }
@@ -184,60 +182,65 @@ double shunting_yard(const vector<string>& tokens) {
     return values.top();
 }
 
-double evaluate_function(const string& function, const string& args_str) {
-    vector<string> args_tokens = tokenize(args_str);
-    vector<double> args_values;
-    string current_arg;
-    for (const auto& token : args_tokens) {
+double evaluate_function(const string& function, const string& args_str) { //для обробки внутрішніх функцій 
+    vector<string> argument_tokenization = tokenize(args_str);
+    vector<double> argument_values;
+    string current_argument_expression; 
+    for (const auto& token : argument_tokenization) {
         if (token == ",") {
-            if (!current_arg.empty()) {
-                double arg_val = shunting_yard(tokenize(current_arg));
-                args_values.push_back(arg_val);
-                current_arg.clear();
+            if (!current_argument_expression.empty()) {
+                double arg_val = shunting_yard(tokenize(current_argument_expression));
+                argument_values.push_back(arg_val);
+                current_argument_expression.clear();
             }
         }
         else {
-            current_arg += token;
+            current_argument_expression += token;
         }
     }
-    if (!current_arg.empty()) {
-        double arg_val = shunting_yard(tokenize(current_arg)); 
-        args_values.push_back(arg_val);
+    if (!current_argument_expression.empty()) {
+        double arg_val = shunting_yard(tokenize(current_argument_expression)); 
+        argument_values.push_back(arg_val);
     }
     if (function == "max") {
-        return max_function(args_values);
+        return max_function(argument_values);
     }
     else if (function == "min") {
-        return min_function(args_values);
+        return min_function(argument_values);
     }
     else if (function == "abs") {
-        return abs_function(args_values);
+        return abs_function(argument_values);
     }
     else if (function == "pow") {
-        return pow_function(args_values);
+        return pow_function(argument_values);
     }
     else {
         throw invalid_argument("Unknown function: " + function);
     }
 }
 
-void process_functions(stack<size_t>& func_positions, string& new_expression, vector<string>& functions) {
-    for (size_t i = 0; i < new_expression.size(); ++i) {
+void process_functions(stack<size_t>& func_positions, string& new_expression, const vector<string>& functions) {
+    for (int i = 0; i < new_expression.size(); ++i) {
         if (new_expression[i] == '(') {
             func_positions.push(i);
-        }
+        } 
         else if (new_expression[i] == ')') {
             if (!func_positions.empty()) {
-                size_t start_pos = func_positions.top();
+                int start_pos = func_positions.top();
                 func_positions.pop();
-                size_t end_pos = i;
+                int end_pos = i;
+                string substr_before_parenthesis = new_expression.substr(0, start_pos);
                 for (const auto& func : functions) {
-                    if (start_pos >= func.length() && new_expression.substr(start_pos - func.length(), func.length()) == func) {
-                        string func_name = func;
-                        string args_str = new_expression.substr(start_pos + 1, end_pos - start_pos - 1);
-                        double result = evaluate_function(func_name, args_str);
-                        new_expression.replace(start_pos - func.length(), end_pos - start_pos + func.length() + 1, to_string(result));
-                        i = start_pos - func.length() + to_string(result).length() - 1;
+                    if (substr_before_parenthesis.size() >= func.size() &&
+                        substr_before_parenthesis.substr(substr_before_parenthesis.size() - func.size()) == func) {
+                        //повертає підрядок починаючи з позиції 6 там де внутрішня функція
+                        string arguments_between_parenthesis = new_expression.substr(start_pos + 1, end_pos - start_pos - 1);
+                        double result = evaluate_function(func, arguments_between_parenthesis);
+                        int func_start = start_pos - func.size();//початок функції 
+                        int func_length = end_pos - func_start + 1;
+                        new_expression.replace(func_start, func_length, to_string(result));
+
+                        i = func_start + to_string(result).size() - 1;
                         break;
                     }
                 }
@@ -261,7 +264,8 @@ string preprocess_expression(const string& expression) {
         string processed_expression = evaluate_and_replace_functions(new_expression, functions);
         if (processed_expression == new_expression) {
             has_functions = false;
-        } else {
+        } 
+        else {
             new_expression = processed_expression;
         }
     }
@@ -269,8 +273,15 @@ string preprocess_expression(const string& expression) {
 }
 
 void removeSpaces(string &str) {
-    str.erase(remove(str.begin(), str.end(), ' '), str.end());
+    string result;
+    for (char c : str) {
+        if (!isspace(c)) {
+            result += c; 
+        }
+    }
+    str = result; 
 }
+
 
 double evaluate_expression(const string& expression) {
     string preprocessed_expression = preprocess_expression(expression);
@@ -290,18 +301,19 @@ double evaluate_expression(const string& expression) {
 // 		}
 // 		else if (strcmp(input, "y") == 0) {
 // 			cin.clear();
-// 			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+// 			cin.ignore();
 // 			return true;
 // 		}
 // 		else {
 // 			cout << "Invalid input. Write 'n' to quit or 'y' to continue \n";
 // 			cin.clear();
-// 			cin.ignore(numeric_limits<streamsize>::max(), '\n');
+// 			cin.ignore();
 // 		}
 // 	}
 // }
 
-int main() {
+
+int main(){
     while (true) {
         string expression;
         cout << "Enter an expression: ";
@@ -319,7 +331,8 @@ int main() {
             catch (const exception& e) {
                 cout << "Error: " << e.what() << endl;
             }
-        } else {
+        } 
+        else {
             try {
                 double result = evaluate_expression(expression);
                 cout << "Result: " << result << endl;
