@@ -9,7 +9,8 @@
 #include <cctype>
 #include <algorithm>
 using namespace std;
-map<string, double> expression_results_map;
+map<string, double> expression_results_map = {
+    {"a", 1.0}};
 
 bool is_custom_function(const string& token) {
     return token == "min" || token == "max" || token == "abs" || token == "pow";
@@ -21,8 +22,8 @@ vector<string> tokenize(const string& expression) {
     for ( int i = 0; i < expression.size(); ++i) {
         char ch = expression[i];
         if (ch == ' ') { 
-            	continue;
-            }
+            continue;
+        }
         if (isdigit(ch) || ch == '.') {
             token += ch;
             while (i + 1 < expression.size() && (isdigit(expression[i + 1]) || expression[i + 1] == '.')) {
@@ -290,56 +291,52 @@ double evaluate_expression(const string& expression) {
 }
 
 
-// bool continue_program() {
-// 	char input[80];
-// 	while (true) {
-// 		cout << "Do you want to continue? (write 'n' to quit or 'y' to continue): ";
-// 		cin >> input;
-// 		if (strcmp(input, "n") == 0) {
-// 			cout << "Goodbye :) \n";
-// 			return false;
-// 		}
-// 		else if (strcmp(input, "y") == 0) {
-// 			cin.clear();
-// 			cin.ignore();
-// 			return true;
-// 		}
-// 		else {
-// 			cout << "Invalid input. Write 'n' to quit or 'y' to continue \n";
-// 			cin.clear();
-// 			cin.ignore();
-// 		}
-// 	}
-// }
+/*bool continue_program() {
+char input[80];
+while (true) {
+cout << "do you want to continue? (write 'n' to quit or 'y' to continue): ";
+cin >> input;
+if (strcmp(input, "n") == 0) {
+cout << "goodbye :) \n";
+return false;
+}
+else if (strcmp(input, "y") == 0) {
+cin.clear();
+cin.ignore();
+return true;
+}
+else {
+cout << "invalid input. write 'n' to quit or 'y' to continue \n";
+cin.clear();
+cin.ignore();
+}
+}
+}*/
 
 
-int main(){
-    while (true) {
-        string expression;
-        cout << "Enter an expression: ";
-        getline(cin, expression);
-        int equal_index = expression.find('=');
-        if (equal_index != string::npos) {
-            string key_name = expression.substr(0, equal_index);
-            removeSpaces(key_name);
-            string value = expression.substr(equal_index + 1);
-            try {
-                double result = evaluate_expression(value);
-                expression_results_map[key_name] = result;
-                cout << key_name << " = " << result << endl;
-            }
-            catch (const exception& e) {
-                cout << "Error: " << e.what() << endl;
-            }
-        } 
-        else {
-            try {
-                double result = evaluate_expression(expression);
-                cout << "Result: " << result << endl;
-            }
-            catch (const exception& e) {
-                cout << "Error: " << e.what() << endl;
-            }
+
+int main() {
+    string expression;
+    cout << "Enter an expression: ";
+    getline(cin, expression);
+    int equal_index = expression.find('=');
+    if (equal_index != string::npos) {
+        string key_name = expression.substr(0, equal_index);
+        removeSpaces(key_name);
+        string value = expression.substr(equal_index + 1);
+        try {
+            double result = evaluate_expression(value);
+            expression_results_map[key_name] = result;
+            cout << key_name << " = " << result << endl;
+        } catch (const exception& e) {
+            cout << "Error: " << e.what() << endl;
+        }
+    } else {
+        try {
+            double result = evaluate_expression(expression);
+            cout << "Result: " << result << endl;
+        } catch (const exception& e) {
+            cout << "Error: " << e.what() << endl;
         }
     }
     return 0;
