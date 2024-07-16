@@ -99,6 +99,7 @@ double max_function(const vector<double>& args) {
         return nan(""); 
     }
     double max_val = args[0];
+    //for (int i = 0; i < args.size(); ++i) {
     for (double arg : args) { //range-based for loop
         if (arg > max_val) {
             max_val = arg;
@@ -129,7 +130,8 @@ double pow_function(const vector<double>& args) {
     return pow(args[0], args[1]);
 }
 
-double abs_function(const std::vector<double>& args) {
+
+double abs_function(const vector<double>& args) {
     if (args.size() != 1) {
         cout << "Error: abs function requires exactly 1 argument" << endl;
         return nan("");
@@ -178,7 +180,6 @@ double shunting_yard(const vector<string>& tokens) {
     while (!operators.empty()) {
         process_operator(values, operators);
     }
-
     if (values.size() != 1) throw runtime_error("Invalid expression");
     return values.top();
 }
@@ -220,7 +221,7 @@ double evaluate_function(const string& function, const string& args_str) { //для
     }
 }
 
-void process_functions(stack<size_t>& func_positions, string& new_expression, const vector<string>& functions) {
+void process_functions(stack<int>& func_positions, string& new_expression, const vector<string>& functions) {
     for (int i = 0; i < new_expression.size(); ++i) {
         if (new_expression[i] == '(') {
             func_positions.push(i);
@@ -235,6 +236,7 @@ void process_functions(stack<size_t>& func_positions, string& new_expression, co
                     if (substr_before_parenthesis.size() >= func.size() &&
                         substr_before_parenthesis.substr(substr_before_parenthesis.size() - func.size()) == func) {
                         //повертає підрядок починаючи з позиції 6 там де внутрішня функція
+                        // Витягує підрядок між дужками
                         string arguments_between_parenthesis = new_expression.substr(start_pos + 1, end_pos - start_pos - 1);
                         double result = evaluate_function(func, arguments_between_parenthesis);
                         int func_start = start_pos - func.size();//початок функції 
@@ -252,7 +254,7 @@ void process_functions(stack<size_t>& func_positions, string& new_expression, co
 
 string evaluate_and_replace_functions(const string& expression, vector<string>& functions) {
     string new_expression = expression;
-    stack<size_t> func_positions;
+    stack<int> func_positions;
     process_functions(func_positions, new_expression, functions);
     return new_expression;
 }
@@ -315,28 +317,37 @@ cin.ignore();
 
 
 
+
 int main() {
-    string expression;
-    cout << "Enter an expression: ";
-    getline(cin, expression);
-    int equal_index = expression.find('=');
-    if (equal_index != string::npos) {
-        string key_name = expression.substr(0, equal_index);
-        removeSpaces(key_name);
-        string value = expression.substr(equal_index + 1);
-        try {
-            double result = evaluate_expression(value);
-            expression_results_map[key_name] = result;
-            cout << key_name << " = " << result << endl;
-        } catch (const exception& e) {
-            cout << "Error: " << e.what() << endl;
+    while (true) {
+        string expression;
+        cout << "Enter an expression: ";
+        getline(cin, expression);
+        if (expression == "exit") {
+            break;
         }
-    } else {
-        try {
-            double result = evaluate_expression(expression);
-            cout << "Result: " << result << endl;
-        } catch (const exception& e) {
-            cout << "Error: " << e.what() << endl;
+        int equal_index = expression.find('=');
+        if (equal_index != string::npos) { //якщо знайшли
+            string key_name = expression.substr(0, equal_index);
+            removeSpaces(key_name);
+            string value = expression.substr(equal_index + 1);
+            try {
+                double result = evaluate_expression(value);
+                expression_results_map[key_name] = result;
+                cout << key_name << " = " << result << endl;
+            } 
+            catch (const exception& e) {
+                cout << "Error: " << e.what() << endl;
+            }
+        } 
+        else {
+            try {
+                double result = evaluate_expression(expression);
+                cout << "Result: " << result << endl;
+            } 
+            catch (const exception& e) {
+                cout << "Error: " << e.what() << endl;
+            }
         }
     }
     return 0;
